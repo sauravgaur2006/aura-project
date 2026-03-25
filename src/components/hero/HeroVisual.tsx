@@ -61,7 +61,7 @@ const HeroVisual = () => {
         <motion.div
           animate={{ y: [10, -10, 10] }}
           transition={{ duration: 6, ease: "easeInOut", repeat: Infinity, delay: 1 }}
-          style={{ willChange: 'transform', transform: 'translateZ(-20px)', position: 'absolute', top: '5%', right: '-10%', width: '60%', height: '40%', zIndex: 20 }}
+          style={{ willChange: 'transform', transform: 'translateZ(-20px)', position: 'absolute', top: '2%', right: '-8%', width: '58%', height: '30%', zIndex: 20 }}
           className="glass-card rounded-[20px] border border-[rgba(255,255,255,0.08)] p-5 shadow-[0_15px_40px_rgba(4,6,14,0.4)] bg-gradient-to-br from-[rgba(255,255,255,0.04)] to-transparent backdrop-blur-xl"
         >
           <div className="flex justify-between items-center mb-6">
