@@ -19,7 +19,7 @@ const HeroVisual = () => {
         <motion.div
           animate={{ y: [-15, 15, -15] }}
           transition={{ duration: 7, ease: "easeInOut", repeat: Infinity }}
-          style={{ willChange: 'transform', transform: 'translateZ(20px)', position: 'absolute', top: '25%', left: '5%', width: '85%', height: '60%', zIndex: 30, display: 'flex', flexDirection: 'column' }}
+          style={{ willChange: 'transform', transform: 'translateZ(20px)', position: 'absolute', top: '30%', left: '5%', width: '85%', height: '48%', zIndex: 30, display: 'flex', flexDirection: 'column' }}
           className="glass-card rounded-2xl border border-[rgba(255,255,255,0.12)] p-6 shadow-[0_20px_50px_rgba(4,6,14,0.5)] bg-gradient-to-br from-[rgba(255,255,255,0.06)] to-[rgba(255,255,255,0.01)] backdrop-blur-2xl overflow-hidden"
         >
           <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.5)] to-transparent opacity-50" />
