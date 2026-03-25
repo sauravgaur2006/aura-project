@@ -1,144 +1,185 @@
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+
+const useCounter = (target: number, duration: number = 2000, delay: number = 0) => {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const start = Date.now();
+      const tick = () => {
+        const elapsed = Date.now() - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setCount(Math.round(target * eased));
+        if (progress < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }, delay);
+    return () => clearTimeout(timeout);
+  }, [target, duration, delay]);
+  return count;
+};
 
 const HeroVisual = () => {
+  const focusScore = useCounter(92, 2000, 400);
+  const hoursTracked = useCounter(10847, 2500, 600);
+  const streak = useCounter(45, 1800, 800);
+  const productivity = useCounter(320, 2000, 1000);
+
+  const weeklyData = [35, 55, 40, 80, 60, 95, 75];
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
   return (
-    <div
-      className="relative mx-auto w-full lg:-ml-[5%] origin-center mt-12 sm:mt-24"
-      style={{ maxWidth: '700px', aspectRatio: '1 / 1', minHeight: '400px', transform: 'scale(1.25)' }}
-    >
-      {/* Glowing Orbs */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="absolute w-[80%] h-[80%] rounded-full bg-accent-violet/20 blur-[100px] animate-[glowPulse_6s_ease-in-out_infinite_alternate]" />
-        <div className="absolute w-[60%] h-[60%] rounded-full bg-accent-blue/30 blur-[80px] -translate-x-12 translate-y-12 animate-[glowPulse_4s_ease-in-out_infinite_alternate-reverse]" />
-        <div className="absolute w-[70%] h-[70%] rounded-full bg-accent-cyan/20 blur-[90px] translate-x-16 -translate-y-16 animate-[glowPulse_5s_ease-in-out_infinite_alternate]" />
+    <div className="relative w-full max-w-[580px] mx-auto lg:ml-auto lg:mr-0">
+      {/* Glow backdrop */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] rounded-full bg-accent-blue/10 blur-[100px]" />
+        <div className="absolute top-0 right-0 w-[60%] h-[60%] rounded-full bg-accent-violet/10 blur-[80px]" />
       </div>
 
-      <div className="relative w-full h-full pointer-events-none" style={{ perspective: '1000px', transformStyle: 'preserve-3d' }}>
-
-        {/* Focus Session Card */}
+      <div className="relative grid grid-cols-2 gap-4">
+        {/* Focus Score - Large Ring */}
         <motion.div
-          animate={{ y: [-15, 15, -15] }}
-          transition={{ duration: 7, ease: "easeInOut", repeat: Infinity }}
-          style={{ willChange: 'transform', transform: 'translateZ(20px)', position: 'absolute', top: '30%', left: '5%', width: '85%', height: '48%', zIndex: 30, display: 'flex', flexDirection: 'column' }}
-          className="glass-card rounded-2xl border border-[rgba(255,255,255,0.12)] p-6 shadow-[0_20px_50px_rgba(4,6,14,0.5)] bg-gradient-to-br from-[rgba(255,255,255,0.06)] to-[rgba(255,255,255,0.01)] backdrop-blur-2xl overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="col-span-2 glass-card rounded-2xl border border-[rgba(255,255,255,0.08)] p-6 sm:p-8 flex items-center gap-8"
         >
-          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[rgba(255,255,255,0.5)] to-transparent opacity-50" />
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-accent-blue/20 flex items-center justify-center border border-accent-blue/30">
-                <span className="text-accent-blue text-lg">⏱️</span>
-              </div>
-              <div>
-                <h3 className="text-foreground font-medium text-sm tracking-wide">Deep Focus</h3>
-                <p className="text-text-secondary text-xs">Machine Learning Setup</p>
-              </div>
+          <div className="relative w-32 h-32 sm:w-36 sm:h-36 flex-shrink-0">
+            <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
+              <circle cx="80" cy="80" r="68" className="fill-none stroke-[rgba(255,255,255,0.04)]" strokeWidth="10" />
+              <motion.circle
+                cx="80" cy="80" r="68"
+                className="fill-none stroke-accent-cyan drop-shadow-[0_0_12px_rgba(6,214,160,0.5)]"
+                strokeWidth="10"
+                strokeLinecap="round"
+                strokeDasharray="427"
+                initial={{ strokeDashoffset: 427 }}
+                animate={{ strokeDashoffset: 427 * (1 - 0.92) }}
+                transition={{ duration: 2, delay: 0.5, ease: "easeOut" }}
+              />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="font-grotesk text-3xl sm:text-4xl font-bold text-foreground">{focusScore}%</span>
+              <span className="text-[0.65rem] text-text-secondary uppercase tracking-[2px] mt-1">Focus</span>
             </div>
-            <div className="px-3 py-1 rounded-full bg-accent-cyan/15 border border-accent-cyan/25 flex items-center gap-2">
+          </div>
+          <div className="flex-1">
+            <h3 className="text-foreground font-grotesk font-bold text-lg sm:text-xl mb-1">Deep Focus Active</h3>
+            <p className="text-text-secondary text-sm mb-4">Real-time session tracking</p>
+            <div className="flex items-center gap-2 mb-2">
               <span className="w-2 h-2 rounded-full bg-accent-cyan animate-pulse" />
-              <span className="text-accent-cyan text-xs font-semibold">98% Focus</span>
+              <span className="text-accent-cyan text-xs font-semibold">Live Session · 45:00</span>
             </div>
-          </div>
-          <div className="flex justify-center items-center my-8">
-            <div className="relative w-40 h-40">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 160 160">
-                <circle cx="80" cy="80" r="70" className="stroke-[rgba(255,255,255,0.05)] fill-none" strokeWidth="8" />
-                <circle cx="80" cy="80" r="70" className="stroke-accent-blue fill-none drop-shadow-[0_0_8px_rgba(59,130,246,0.6)]" strokeWidth="8" strokeDasharray="440" strokeDashoffset="110" strokeLinecap="round" />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="font-grotesk text-4xl font-bold text-foreground tracking-wider">45<span className="text-xl text-text-secondary">:00</span></span>
-                <span className="text-xs text-text-secondary uppercase tracking-widest mt-1">Remaining</span>
+            <div className="flex gap-2 mt-3">
+              <div className="h-1.5 flex-1 bg-accent-cyan/20 rounded-full overflow-hidden">
+                <motion.div className="h-full bg-accent-cyan rounded-full" initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 2, delay: 0.8 }} />
               </div>
+              <div className="h-1.5 flex-1 bg-accent-violet/20 rounded-full overflow-hidden">
+                <motion.div className="h-full bg-accent-violet rounded-full" initial={{ width: 0 }} animate={{ width: '65%' }} transition={{ duration: 2, delay: 1.0 }} />
+              </div>
+              <div className="h-1.5 flex-1 bg-[rgba(255,255,255,0.05)] rounded-full" />
             </div>
-          </div>
-          <div className="w-full flex gap-3 mt-auto">
-            <div className="h-2 flex-1 bg-accent-cyan/20 rounded-full overflow-hidden"><div className="h-full w-full bg-accent-cyan rounded-full" /></div>
-            <div className="h-2 flex-1 bg-accent-violet/20 rounded-full overflow-hidden"><div className="h-full w-[40%] bg-accent-violet rounded-full" /></div>
-            <div className="h-2 flex-1 bg-[rgba(255,255,255,0.05)] rounded-full" />
           </div>
         </motion.div>
 
-        {/* Analytics Card */}
+        {/* Weekly Chart */}
         <motion.div
-          animate={{ y: [10, -10, 10] }}
-          transition={{ duration: 6, ease: "easeInOut", repeat: Infinity, delay: 1 }}
-          style={{ willChange: 'transform', transform: 'translateZ(-20px)', position: 'absolute', top: '2%', right: '-8%', width: '58%', height: '30%', zIndex: 20 }}
-          className="glass-card rounded-[20px] border border-[rgba(255,255,255,0.08)] p-5 shadow-[0_15px_40px_rgba(4,6,14,0.4)] bg-gradient-to-br from-[rgba(255,255,255,0.04)] to-transparent backdrop-blur-xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="glass-card rounded-2xl border border-[rgba(255,255,255,0.08)] p-5"
         >
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-text-secondary text-xs uppercase tracking-widest font-semibold">Weekly Productivity</h3>
-            <span className="text-accent-cyan text-xs font-medium bg-accent-cyan/10 px-2 py-0.5 rounded">+14.2%</span>
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-text-secondary text-[0.65rem] uppercase tracking-widest font-semibold">Weekly</span>
+            <span className="text-accent-cyan text-[0.65rem] font-semibold bg-accent-cyan/10 px-2 py-0.5 rounded">+14.2%</span>
           </div>
-          <div className="h-[65%] w-full flex items-end justify-between gap-2 px-1">
-            {[35, 55, 40, 80, 60, 95, 75].map((height, i) => (
-              <div key={i} className="w-full bg-[rgba(255,255,255,0.03)] rounded-t-sm relative group overflow-hidden" style={{ height: '100%' }}>
-                <div
-                  className={`absolute bottom-0 w-full rounded-t-sm transition-all duration-1000 ${i === 5 ? 'bg-gradient-to-t from-accent-cyan to-accent-blue shadow-[0_0_15px_rgba(6,214,160,0.4)]' : 'bg-[rgba(255,255,255,0.15)] group-hover:bg-[rgba(255,255,255,0.25)]'}`}
-                  style={{ height: `${height}%` }}
+          <div className="h-24 flex items-end gap-[6px]">
+            {weeklyData.map((h, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <motion.div
+                  className={`w-full rounded-t-sm ${i === 5 ? 'bg-gradient-to-t from-accent-cyan to-accent-blue shadow-[0_0_10px_rgba(6,214,160,0.3)]' : 'bg-foreground/15 hover:bg-foreground/25 transition-colors'}`}
+                  initial={{ height: 0 }}
+                  animate={{ height: `${h}%` }}
+                  transition={{ duration: 0.8, delay: 0.6 + i * 0.08, ease: "easeOut" }}
+                  style={{ maxHeight: `${h}%` }}
                 />
+                <span className="text-[0.5rem] text-text-secondary">{days[i]}</span>
               </div>
             ))}
           </div>
         </motion.div>
 
-        {/* Today's Progress Card */}
+        {/* Study Streak */}
         <motion.div
-          animate={{ y: [4, -6, 4] }}
-          transition={{ duration: 6, ease: "easeInOut", repeat: Infinity, delay: 0.8 }}
-          style={{ willChange: 'transform', transform: 'translateZ(10px)', position: 'absolute', bottom: '-2%', left: '2%', width: '44%', height: '22%', zIndex: 35, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
-          className="glass-card rounded-2xl border border-[rgba(255,255,255,0.08)] p-4 shadow-[0_15px_40px_rgba(4,6,14,0.3)] bg-gradient-to-br from-[rgba(255,255,255,0.05)] to-transparent backdrop-blur-xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="glass-card rounded-2xl border border-[rgba(255,255,255,0.08)] p-5 flex flex-col justify-between"
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-foreground text-[0.65rem] sm:text-xs font-semibold tracking-wider uppercase mb-0.5">Today's Goal</div>
-              <div className="text-accent-amber text-[0.55rem] sm:text-[0.65rem] font-medium">6h target · 4.2h done</div>
-            </div>
-            <div className="relative w-9 h-9 flex-shrink-0">
-              <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
-                <circle cx="18" cy="18" r="15" fill="none" stroke="hsl(var(--accent-amber))" strokeWidth="3" strokeDasharray="94" strokeDashoffset="25" strokeLinecap="round" className="drop-shadow-[0_0_6px_rgba(245,158,11,0.7)]" />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center text-[0.5rem] font-bold text-accent-amber">70%</div>
+          <div>
+            <span className="text-text-secondary text-[0.65rem] uppercase tracking-widest font-semibold">Streak</span>
+            <div className="font-grotesk text-4xl sm:text-5xl font-bold text-foreground mt-2 leading-none">
+              {streak}
+              <span className="text-lg text-text-secondary ml-1">days</span>
             </div>
           </div>
-          <div className="flex flex-col gap-[5px]">
-            {[
-              { subject: 'Algorithms', pct: '85%', color: 'hsl(var(--accent-cyan))' },
-              { subject: 'OS Concepts', pct: '60%', color: 'hsl(var(--accent-violet))' },
-            ].map((s, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="text-[0.5rem] text-foreground/60 w-[52px] truncate">{s.subject}</span>
-                <div className="flex-1 h-[3px] bg-foreground/5 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: s.pct, background: s.color, boxShadow: `0 0 6px ${s.color}` }} />
-                </div>
-                <span className="text-[0.5rem] text-foreground/40">{s.pct}</span>
-              </div>
+          <div className="flex gap-[3px] mt-4">
+            {Array.from({ length: 14 }).map((_, i) => (
+              <motion.div
+                key={i}
+                className={`flex-1 h-2 rounded-[2px] ${i < 12 ? 'bg-accent-amber' : i < 13 ? 'bg-accent-amber/40' : 'bg-foreground/10'}`}
+                initial={{ scaleY: 0 }}
+                animate={{ scaleY: 1 }}
+                transition={{ duration: 0.3, delay: 0.8 + i * 0.04 }}
+                style={{ transformOrigin: 'bottom' }}
+              />
             ))}
+          </div>
+          <span className="text-accent-amber text-[0.6rem] font-semibold mt-2">🔥 Personal best!</span>
+        </motion.div>
+
+        {/* Hours Tracked */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="glass-card rounded-2xl border border-[rgba(255,255,255,0.08)] p-5 flex flex-col justify-between"
+        >
+          <span className="text-text-secondary text-[0.65rem] uppercase tracking-widest font-semibold">Hours Tracked</span>
+          <div className="font-grotesk text-3xl sm:text-4xl font-bold bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-transparent mt-2 leading-none">
+            {hoursTracked.toLocaleString()}
+          </div>
+          <div className="flex items-center gap-2 mt-3">
+            <div className="w-5 h-5 rounded-full bg-accent-blue/20 flex items-center justify-center">
+              <span className="text-[0.5rem] text-accent-blue">↑</span>
+            </div>
+            <span className="text-accent-blue text-[0.65rem] font-medium">+126 this week</span>
           </div>
         </motion.div>
 
-        {/* Neural Engine Card */}
+        {/* Productivity Boost */}
         <motion.div
-          animate={{ y: [5, -5, 5] }}
-          transition={{ duration: 5, ease: "easeInOut", repeat: Infinity, delay: 1.5 }}
-          style={{ willChange: 'transform', transform: 'translateZ(10px)', position: 'absolute', bottom: '-2%', right: '2%', width: '44%', height: '22%', zIndex: 35, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
-          className="glass-card rounded-2xl border border-[rgba(255,255,255,0.08)] p-4 sm:p-5 shadow-[0_15px_40px_rgba(4,6,14,0.3)] bg-gradient-to-br from-[rgba(255,255,255,0.05)] to-transparent backdrop-blur-xl"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.7 }}
+          className="glass-card rounded-2xl border border-[rgba(255,255,255,0.08)] p-5 flex flex-col justify-between"
         >
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-accent-violet/20 border border-accent-violet/30">
-              <span className="w-2.5 h-2.5 rounded-full bg-accent-violet animate-[pulseDot_3s_ease-in-out_infinite] shadow-[0_0_12px_rgba(139,92,246,0.9)]" />
-            </div>
-            <div>
-              <div className="text-foreground text-[0.65rem] sm:text-xs font-semibold tracking-wider uppercase mb-0.5">Neural Engine</div>
-              <div className="text-accent-cyan text-[0.55rem] sm:text-[0.65rem] font-medium flex items-center gap-1.5">Optimal Routing</div>
-            </div>
+          <span className="text-text-secondary text-[0.65rem] uppercase tracking-widest font-semibold">Productivity</span>
+          <div className="font-grotesk text-3xl sm:text-4xl font-bold text-foreground mt-2 leading-none">
+            {productivity}%
+            <span className="text-accent-cyan text-sm ml-1">↑</span>
           </div>
-          <div className="w-full h-[35%] flex items-end gap-[3px] opacity-70">
-            {[40, 70, 45, 90, 60, 80, 50, 100, 30].map((h, i) => (
-              <div key={i} className="flex-1 bg-gradient-to-t from-accent-violet to-accent-blue rounded-t-[2px] transition-all duration-500 hover:h-full" style={{ height: `${h}%` }} />
-            ))}
+          <div className="w-full h-1.5 bg-foreground/5 rounded-full overflow-hidden mt-3">
+            <motion.div
+              className="h-full bg-gradient-to-r from-accent-violet to-accent-cyan rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: '82%' }}
+              transition={{ duration: 1.5, delay: 1, ease: "easeOut" }}
+            />
           </div>
+          <span className="text-text-secondary text-[0.55rem] mt-1">vs. last month</span>
         </motion.div>
-
       </div>
     </div>
   );
