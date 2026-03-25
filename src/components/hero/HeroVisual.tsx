@@ -120,7 +120,7 @@ const HeroVisual = () => {
         <motion.div
           animate={{ y: [5, -5, 5] }}
           transition={{ duration: 5, ease: "easeInOut", repeat: Infinity, delay: 1.5 }}
-          style={{ willChange: 'transform', transform: 'translateZ(10px)', position: 'absolute', bottom: '2%', right: '2%', width: '45%', height: '24%', zIndex: 35, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+          style={{ willChange: 'transform', transform: 'translateZ(10px)', position: 'absolute', bottom: '-2%', right: '2%', width: '44%', height: '22%', zIndex: 35, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
           className="glass-card rounded-2xl border border-[rgba(255,255,255,0.08)] p-4 sm:p-5 shadow-[0_15px_40px_rgba(4,6,14,0.3)] bg-gradient-to-br from-[rgba(255,255,255,0.05)] to-transparent backdrop-blur-xl"
         >
           <div className="flex items-center gap-3">
