@@ -22,3 +22,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Ignore server environment variables
+server/.env
+
+# Ignore frontend environment variables (if you have them)
+.env
+
+# Ignore massive library folders
+node_modules/
+server/node_modules/
