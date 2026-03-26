@@ -1,0 +1,26 @@
+{
+  "name": "scholar-os-backend",
+  "version": "1.0.0",
+  "description": "Backend for ScholarOS – Focus Coach AI",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "google-auth-library": "^10.6.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^7.1.1",
+    "mongoose": "^8.23.0",
+    "morgan": "^1.10.0",
+    "openai": "^4.51.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.2"
+  }
+}

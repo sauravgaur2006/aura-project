@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { loadModels, detectFace } from '@/lib/face-analysis';
+import api from '@/lib/api';
+import { toast } from 'sonner';
 
 const nudges = [
   { text: "Great focus! Keep going 🔥", type: 'positive' },
@@ -13,46 +16,118 @@ const nudges = [
 const StudyMode = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [seconds, setSeconds] = useState(0);
-  const [focusScore, setFocusScore] = useState(92);
-  const [status, setStatus] = useState<'focused' | 'distracted' | 'away'>('focused');
+  const [focusScore, setFocusScore] = useState(100);
+  const [status, setStatus] = useState<'focused' | 'distracted' | 'away' | 'drowsy'>('focused');
   const [currentNudge, setCurrentNudge] = useState<typeof nudges[0] | null>(null);
-  const [cameraGranted, setCameraGranted] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const navigate = useNavigate();
 
+  // Load models on mount
+  useEffect(() => {
+    loadModels();
+  }, []);
+
+  // Timer logic
   useEffect(() => {
     if (!isRunning) return;
     const interval = setInterval(() => setSeconds(s => s + 1), 1000);
     return () => clearInterval(interval);
   }, [isRunning]);
 
-  // Simulate focus changes
+  // Real-time detection logic
+  useEffect(() => {
+    if (!isRunning || !videoRef.current) return;
+
+    const interval = setInterval(async () => {
+      if (videoRef.current) {
+        const result = await detectFace(videoRef.current);
+        const newStatus = result.status as any;
+        setStatus(newStatus);
+
+        // Update focus score
+        setFocusScore(prev => {
+          if (newStatus === 'focused') return Math.min(100, prev + 0.5);
+          if (newStatus === 'distracted') return Math.max(0, prev - 1);
+          if (newStatus === 'away') return Math.max(0, prev - 2);
+          if (newStatus === 'drowsy') return Math.max(0, prev - 1.5);
+          return prev;
+        });
+
+        // Log event to backend if distracted or drowsy
+        if (['distracted', 'away', 'drowsy'].includes(newStatus) && sessionId) {
+          api.post(`/sessions/${sessionId}/event`, {
+            type: newStatus,
+            timestamp: new Date()
+          }).catch(console.error);
+        }
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [isRunning, sessionId]);
+
+  // Periodic nudges
   useEffect(() => {
     if (!isRunning) return;
     const interval = setInterval(() => {
-      const rand = Math.random();
-      if (rand > 0.85) {
-        setStatus('distracted');
-        setFocusScore(s => Math.max(0, s - 3));
-      } else if (rand > 0.95) {
-        setStatus('away');
-        setFocusScore(s => Math.max(0, s - 5));
-      } else {
-        setStatus('focused');
-        setFocusScore(s => Math.min(100, s + 1));
-      }
-    }, 5000);
+      const positiveNudges = nudges.filter(n => n.type === 'positive');
+      const nudge = positiveNudges[Math.floor(Math.random() * positiveNudges.length)];
+      setCurrentNudge(nudge);
+      setTimeout(() => setCurrentNudge(null), 4000);
+    }, 30000);
     return () => clearInterval(interval);
   }, [isRunning]);
 
-  // Show nudges periodically
-  useEffect(() => {
-    if (!isRunning) return;
-    const interval = setInterval(() => {
-      const nudge = nudges[Math.floor(Math.random() * nudges.length)];
-      setCurrentNudge(nudge);
-      setTimeout(() => setCurrentNudge(null), 4000);
-    }, 15000);
-    return () => clearInterval(interval);
-  }, [isRunning]);
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      return true;
+    } catch (err) {
+      toast.error("Camera access denied. Please enable camera to use Study Mode.");
+      return false;
+    }
+  };
+
+  const handleStart = async () => {
+    const cameraOk = await startCamera();
+    if (!cameraOk) return;
+
+    try {
+      const { data } = await api.post('/sessions/start');
+      setSessionId(data._id);
+      setIsRunning(true);
+      setSeconds(0);
+      setFocusScore(100);
+      setStatus('focused');
+      toast.success("Focus session started!");
+    } catch (err) {
+      toast.error("Failed to start session on server.");
+    }
+  };
+
+  const handleEnd = async () => {
+    if (sessionId) {
+      try {
+        await api.post(`/sessions/${sessionId}/end`, { focusScore });
+        toast.success("Session saved successfully!");
+      } catch (err) {
+        toast.error("Failed to save session.");
+      }
+    }
+    
+    // Stop camera
+    if (videoRef.current?.srcObject) {
+      const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
+      tracks.forEach(track => track.stop());
+    }
+    
+    setIsRunning(false);
+    setSessionId(null);
+  };
 
   const formatTime = useCallback((s: number) => {
     const h = Math.floor(s / 3600);
@@ -61,21 +136,14 @@ const StudyMode = () => {
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   }, []);
 
-  const handleStart = () => {
-    setCameraGranted(true);
-    setIsRunning(true);
-    setSeconds(0);
-    setFocusScore(92);
-    setStatus('focused');
-  };
-
   const statusColors = {
     focused: { bg: 'bg-accent-cyan/15', text: 'text-accent-cyan', border: 'border-accent-cyan/30', label: '🎯 Focused' },
     distracted: { bg: 'bg-accent-amber/15', text: 'text-accent-amber', border: 'border-accent-amber/30', label: '⚡ Distracted' },
     away: { bg: 'bg-accent-rose/15', text: 'text-accent-rose', border: 'border-accent-rose/30', label: '👋 Away' },
+    drowsy: { bg: 'bg-accent-violet/15', text: 'text-accent-violet', border: 'border-accent-violet/30', label: '😴 Drowsy' },
   };
 
-  const sc = statusColors[status];
+  const sc = (statusColors as any)[status] || statusColors.focused;
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-primary)' }}>
@@ -121,10 +189,19 @@ const StudyMode = () => {
             </p>
 
             <div className="glass-card rounded-3xl p-8 border border-[rgba(255,255,255,0.08)] max-w-[500px] mx-auto mb-8">
-              <div className="w-full aspect-video rounded-2xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] flex items-center justify-center mb-6">
-                <div className="text-center">
-                  <span className="text-4xl block mb-3">📷</span>
-                  <span className="text-text-secondary text-[0.9rem]">Camera preview will appear here</span>
+              <div className="w-full aspect-video rounded-2xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] flex items-center justify-center mb-6 overflow-hidden relative">
+                <video 
+                  ref={videoRef} 
+                  autoPlay 
+                  muted 
+                  playsInline 
+                  className="w-full h-full object-cover grayscale opacity-40"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center">
+                    <span className="text-4xl block mb-3">📷</span>
+                    <span className="text-text-secondary text-[0.9rem]">Camera ready</span>
+                  </div>
                 </div>
               </div>
               <div className="text-text-secondary text-[0.8rem] mb-6 flex items-center gap-2 justify-center">
@@ -144,19 +221,22 @@ const StudyMode = () => {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 mt-4">
             {/* Main */}
             <div className="space-y-6">
-              {/* Camera Feed Placeholder */}
+              {/* Camera Feed */}
               <div className="glass-card rounded-2xl border border-[rgba(255,255,255,0.08)] overflow-hidden">
                 <div className="w-full aspect-video bg-[rgba(255,255,255,0.02)] flex items-center justify-center relative">
-                  <div className="text-center">
-                    <span className="text-5xl block mb-3">👁️</span>
-                    <span className="text-text-secondary text-[0.9rem]">AI Focus Detection Active</span>
-                  </div>
-                  <div className="absolute top-4 left-4 flex items-center gap-2">
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    muted 
+                    playsInline 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-4 left-4 flex items-center gap-2 bg-black/40 px-3 py-1 rounded-full backdrop-blur-md">
                     <span className="w-2.5 h-2.5 rounded-full bg-accent-cyan animate-pulse" />
-                    <span className="text-accent-cyan text-[0.75rem] font-semibold">LIVE</span>
+                    <span className="text-accent-cyan text-[0.75rem] font-semibold">LIVE AI</span>
                   </div>
                   <div className="absolute top-4 right-4">
-                    <span className={`px-3 py-1 rounded-full ${sc.bg} ${sc.text} text-[0.75rem] font-semibold border ${sc.border}`}>
+                    <span className={`px-3 py-1 rounded-full ${sc.bg} ${sc.text} text-[0.75rem] font-semibold border ${sc.border} backdrop-blur-md`}>
                       {sc.label}
                     </span>
                   </div>
@@ -170,7 +250,7 @@ const StudyMode = () => {
                 </div>
                 <div className="flex gap-4 justify-center">
                   <button
-                    onClick={() => setIsRunning(false)}
+                    onClick={handleEnd}
                     className="px-8 py-3 rounded-xl bg-accent-rose/15 text-accent-rose border border-accent-rose/30 font-semibold cursor-pointer hover:bg-accent-rose/25 transition-colors"
                   >
                     End Session
@@ -200,7 +280,7 @@ const StudyMode = () => {
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="font-grotesk text-2xl font-bold text-foreground">{focusScore}%</span>
+                    <span className="font-grotesk text-2xl font-bold text-foreground">{Math.round(focusScore)}%</span>
                     <span className="text-[0.6rem] text-text-secondary uppercase tracking-wider">Focus</span>
                   </div>
                 </div>
@@ -212,10 +292,10 @@ const StudyMode = () => {
                 <h4 className="text-text-secondary text-[0.7rem] uppercase tracking-widest font-semibold mb-4">Session Stats</h4>
                 <div className="space-y-3">
                   {[
-                    { label: 'Focus Time', value: `${Math.floor(seconds * 0.72 / 60)}m`, icon: '🎯' },
-                    { label: 'Distractions', value: `${Math.floor(seconds / 120)}`, icon: '⚡' },
-                    { label: 'Breaks Taken', value: '0', icon: '☕' },
-                    { label: 'Points Earned', value: `+${Math.floor(seconds / 10)}`, icon: '💰' },
+                    { label: 'Time Elapsed', value: `${Math.floor(seconds / 60)}m`, icon: '⏱️' },
+                    { label: 'Focus Level', value: focusScore > 85 ? 'High' : focusScore > 60 ? 'Med' : 'Low', icon: '🎯' },
+                    { label: 'AI Status', value: status.charAt(0).toUpperCase() + status.slice(1), icon: '🤖' },
+                    { label: 'XP Points', value: `+${Math.floor(seconds / 10)}`, icon: '💰' },
                   ].map((s, i) => (
                     <div key={i} className="flex items-center justify-between py-2">
                       <span className="text-text-secondary text-[0.85rem] flex items-center gap-2">

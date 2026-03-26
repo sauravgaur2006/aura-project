@@ -18,7 +18,7 @@ const stats = [
 
 const Hero = () => {
   return (
-    <section className="relative z-10 min-h-screen flex flex-col px-6 md:px-12 pt-[90px] lg:pt-[105px] pb-16" id="hero">
+    <section className="relative z-10 min-h-screen flex flex-col px-6 md:px-12 pt-[140px] lg:pt-[180px] pb-16" id="hero">
       <div className="max-w-[1400px] w-full mx-auto grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center lg:items-start mb-16 lg:mb-24">
         {/* Left */}
         <div className="relative text-center">
