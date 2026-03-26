@@ -39,7 +39,9 @@ const CTAFooter = () => {
       <footer className="relative z-10 border-t border-[rgba(255,255,255,0.05)] py-12 px-6 md:px-12">
         <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-blue to-accent-cyan flex items-center justify-center text-primary-foreground text-xs font-bold shadow-md">S</div>
+            <div className="w-8 h-8 flex items-center justify-center">
+              <img src="/logo.svg" alt="ScholarOS Logo" className="w-full h-full object-contain" />
+            </div>
             <span className="font-grotesk font-bold text-foreground tracking-[2px]">ScholarOS</span>
           </div>
           <div className="flex gap-8 text-text-secondary text-[0.85rem]">

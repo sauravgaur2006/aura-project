@@ -14,15 +14,8 @@ const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-[100] px-6 md:px-12 py-4 flex items-center justify-between backdrop-blur-[24px] saturate-[1.8] bg-[#04060e]/65 border-b border-[rgba(255,255,255,0.07)]">
       <Link to="/" className="flex items-center gap-[0.7rem] no-underline">
-        <div className="w-[38px] h-[38px] rounded-[11px] bg-gradient-to-br from-accent-blue to-accent-cyan flex items-center justify-center font-black text-primary-foreground shadow-[0_0_20px_rgba(59,130,246,0.35)] relative overflow-hidden after:content-[''] after:absolute after:inset-0 after:bg-gradient-to-br after:from-transparent after:from-[40%] after:to-[rgba(255,255,255,0.18)] after:rounded-[inherit]">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 drop-shadow-md">
-            <path d="M11 19c-3 -2 -6 -2 -8 -2V4c2 0 5 0 8 2c3 -2 6 -2 8 -2v13c-2 0 -5 0 -8 2z" fill="rgba(255,255,255,0.15)"/>
-            <path d="M11 19V6" strokeWidth="2.7"/>
-            <path d="M6 7c2 1 3.5 1.5 5 2" strokeWidth="1.5" opacity="0.75"/>
-            <path d="M16 7c-2 1 -3.5 1.5 -5 2" strokeWidth="1.5" opacity="0.75"/>
-            <path d="M5 11c2 1 4 1.5 6 1.5" strokeWidth="1.5" opacity="0.4"/>
-            <path d="M17 11c-2 1 -4 1.5 -6 1.5" strokeWidth="1.5" opacity="0.4"/>
-          </svg>
+        <div className="w-[38px] h-[38px] flex items-center justify-center transition-transform hover:scale-105 drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+          <img src="/logo.svg" alt="ScholarOS Logo" className="w-full h-full object-contain" />
         </div>
         <span className="font-grotesk font-bold text-[1.35rem] tracking-[4px] bg-gradient-to-r from-foreground to-foreground/65 bg-clip-text text-transparent">
           ScholarOS

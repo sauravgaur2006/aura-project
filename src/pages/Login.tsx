@@ -35,7 +35,9 @@ const Login = () => {
         className="glass-card rounded-3xl p-8 md:p-12 border border-[rgba(255,255,255,0.08)] w-full max-w-[440px] relative z-10"
       >
         <Link to="/" className="flex items-center gap-2 mb-8 no-underline justify-center">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-accent-blue to-accent-cyan flex items-center justify-center text-primary-foreground text-sm font-bold shadow-md">S</div>
+          <div className="w-9 h-9 flex items-center justify-center">
+            <img src="/logo.svg" alt="ScholarOS Logo" className="w-full h-full object-contain" />
+          </div>
           <span className="font-grotesk font-bold text-[1.2rem] text-foreground tracking-[3px]">ScholarOS</span>
         </Link>
 

@@ -117,7 +117,9 @@ const Dashboard = () => {
 
       <nav className="sticky top-0 z-50 px-6 md:px-10 py-5 flex items-center justify-between backdrop-blur-2xl bg-[#02040a]/70 border-b border-[rgba(255,255,255,0.05)]">
         <Link to="/" className="flex items-center gap-3 no-underline group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-blue via-accent-cyan to-accent-blue bg-[length:200%_200%] animate-gradient-slow flex items-center justify-center text-white font-black shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-transform duration-300 group-hover:scale-110">S</div>
+          <div className="w-10 h-10 flex items-center justify-center transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+            <img src="/logo.svg" alt="ScholarOS Logo" className="w-full h-full object-contain" />
+          </div>
           <span className="font-grotesk font-bold text-white text-xl tracking-[1.5px]">ScholarOS</span>
         </Link>
         <div className="flex items-center gap-4">

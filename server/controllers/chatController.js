@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import Chat from '../models/Chat.js';
 
 export const getChatHistory = async (req, res) => {
@@ -13,25 +13,33 @@ export const getChatHistory = async (req, res) => {
 export const sendMessage = async (req, res) => {
   const { message } = req.body;
   try {
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash', systemInstruction: 'You are ScholarOS, a helpful academic tutor and productivity coach for students. Provide study tips, academic help, and motivation.' });
+
     let chat = await Chat.findOne({ userId: req.user.id });
     
     if (!chat) {
       chat = new Chat({ userId: req.user.id, messages: [] });
     }
 
+    const mapRole = (role) => role === 'assistant' ? 'model' : 'user';
+
+    const history = chat.messages.map(m => ({
+      role: mapRole(m.role),
+      parts: [{ text: m.content }]
+    }));
+
+    const chatSession = model.startChat({
+      history: history
+    });
+
     const userMessage = { role: 'user', content: message };
     chat.messages.push(userMessage);
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        { role: 'system', content: 'You are ScholarOS, a helpful academic tutor and productivity coach for students. Provide study tips, academic help, and motivation.' },
-        ...chat.messages.map(m => ({ role: m.role, content: m.content }))
-      ],
-    });
+    const result = await chatSession.sendMessage(message);
+    const textResponse = result.response.text();
 
-    const assistantMessage = { role: 'assistant', content: response.choices[0].message.content };
+    const assistantMessage = { role: 'assistant', content: textResponse };
     chat.messages.push(assistantMessage);
     await chat.save();
 

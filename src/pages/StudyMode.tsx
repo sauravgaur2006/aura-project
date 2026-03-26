@@ -150,7 +150,9 @@ const StudyMode = () => {
       {/* Top Bar */}
       <nav className="sticky top-0 z-50 px-6 md:px-8 py-4 flex items-center justify-between backdrop-blur-xl bg-[#04060e]/80 border-b border-[rgba(255,255,255,0.06)]">
         <Link to="/dashboard" className="flex items-center gap-2 no-underline">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-blue to-accent-cyan flex items-center justify-center text-primary-foreground text-xs font-bold shadow-md">S</div>
+          <div className="w-8 h-8 flex items-center justify-center">
+            <img src="/logo.svg" alt="ScholarOS Logo" className="w-full h-full object-contain" />
+          </div>
           <span className="font-grotesk font-bold text-foreground tracking-[2px] text-[1rem]">Study Mode</span>
         </Link>
         <div className="flex items-center gap-3">
