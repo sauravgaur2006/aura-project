@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -14,6 +13,15 @@ const Chat = () => {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const navigate = useNavigate();
+
+  // Session verification — Fortress Rule D
+  useEffect(() => {
+    api.get('/auth/me').catch((err) => {
+      if (err?.response?.status === 401) navigate('/login', { replace: true });
+    });
+  }, [navigate]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -28,10 +36,15 @@ const Chat = () => {
 
     try {
       const { data } = await api.post('/chat', { message: userMsg.content });
-      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
-    } catch (error) {
-      toast.error("Failed to get response from AI Tutor.");
-      setMessages(prev => [...prev, { role: 'assistant', content: "I'm sorry, I'm having trouble connecting to my brain right now. Please try again in a moment! 🧠" }]);
+      // Backend returns { message: { role: 'assistant', content: '...' } }
+      const reply = data.message?.content;
+      if (!reply) throw new Error('Empty response');
+      setMessages(prev => [...prev, { role: 'assistant', content: reply }]);
+    } catch (error: any) {
+      if (error?.response?.status !== 401) {
+        toast.error('Failed to get response from AI Tutor.');
+        setMessages(prev => [...prev, { role: 'assistant', content: "I'm sorry, I'm having trouble connecting to my brain right now. Please try again in a moment! 🧠" }]);
+      }
     } finally {
       setIsTyping(false);
     }
