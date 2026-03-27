@@ -20,12 +20,18 @@ const loginSchema = z.object({
 // #3: Helper to set JWT as httpOnly cookie
 const setTokenCookie = (res, userId) => {
   const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  
+  const isProduction = process.env.NODE_ENV === 'production';
+
   res.cookie('token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    // CRITICAL: Must be true for sameSite: 'none' to work
+    secure: true, 
+    // CRITICAL: 'none' allows cookies to work across Vercel and Render domains
+    sameSite: isProduction ? 'none' : 'lax', 
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   });
+  
   return token;
 };
 
@@ -49,11 +55,9 @@ export const googleLogin = async (req, res) => {
       await user.save();
     }
 
-    // #3: Set token in httpOnly cookie instead of response body
     setTokenCookie(res, user._id);
     res.json({ user: { id: user._id, name: user.name, email: user.email, points: user.points, streak: user.streak } });
   } catch (error) {
-    // #7: Don't leak internal error messages
     console.error('Google login error:', error);
     res.status(500).json({ message: 'An internal error occurred' });
   }
@@ -61,7 +65,6 @@ export const googleLogin = async (req, res) => {
 
 export const register = async (req, res) => {
   try {
-    // #4: Validate input with Zod
     const { name, email, password } = registerSchema.parse(req.body);
 
     const existingUser = await User.findOne({ email });
@@ -70,14 +73,12 @@ export const register = async (req, res) => {
     const user = new User({ name, email, password });
     await user.save();
 
-    // #3: Set token in httpOnly cookie instead of response body
     setTokenCookie(res, user._id);
     res.status(201).json({ user: { id: user._id, name: user.name, email: user.email } });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ message: 'Validation failed', errors: error.errors });
     }
-    // #7: Don't leak internal error messages
     console.error('Registration error:', error);
     res.status(500).json({ message: 'An internal error occurred' });
   }
@@ -85,7 +86,6 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    // #4: Validate input with Zod
     const { email, password } = loginSchema.parse(req.body);
 
     const user = await User.findOne({ email });
@@ -94,24 +94,24 @@ export const login = async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    // #3: Set token in httpOnly cookie instead of response body
     setTokenCookie(res, user._id);
     res.json({ user: { id: user._id, name: user.name, email: user.email, points: user.points, streak: user.streak } });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ message: 'Validation failed', errors: error.errors });
     }
-    // #7: Don't leak internal error messages
     console.error('Login error:', error);
     res.status(500).json({ message: 'An internal error occurred' });
   }
 };
 
 export const logout = async (req, res) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   res.clearCookie('token', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: true,
+    sameSite: isProduction ? 'none' : 'lax',
   });
   res.json({ message: 'Logged out successfully' });
 };
