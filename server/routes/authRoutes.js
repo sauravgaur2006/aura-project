@@ -1,6 +1,7 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { register, login, googleLogin, logout } from '../controllers/authController.js';
+import { register, login, googleLogin, logout, getMe } from '../controllers/authController.js';
+import auth from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -17,5 +18,8 @@ router.post('/register', authLimiter, register);
 router.post('/login', authLimiter, login);
 router.post('/google-login', authLimiter, googleLogin);
 router.post('/logout', logout);
+
+// Session verification — frontend calls this on load to confirm cookie is still valid
+router.get('/me', auth, getMe);
 
 export default router;

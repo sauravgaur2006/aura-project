@@ -46,21 +46,28 @@ const monthlyData = [
 const Dashboard = () => {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  // Start with localStorage for instant render, then sync from server
+  const [user, setUser] = useState<any>(JSON.parse(localStorage.getItem('user') || '{}'));
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const init = async () => {
       try {
+        // Verify session via httpOnly cookie — syncs fresh user data from server
+        // 401 is handled globally in api.ts (redirect to /login)
+        const { data: meData } = await api.get('/auth/me');
+        const freshUser = meData.user;
+        setUser(freshUser);
+        localStorage.setItem('user', JSON.stringify(freshUser));
+
         const { data } = await api.get('/sessions');
-        // Calculate dynamic mock stats if data is empty, or use real data
         const totalHrs = data.reduce((acc: number, s: any) => acc + (s.duration || 0), 0) / 3600;
         const avgF = data.length > 0 ? data.reduce((acc: number, s: any) => acc + s.focusScoreAvg, 0) / data.length : 0;
-        
+
         setStats({
           totalHours: totalHrs > 0 ? totalHrs.toFixed(1) : 32.5,
           avgScore: avgF > 0 ? Math.round(avgF) : 84,
-          streak: user.streak || 12,
-          points: user.points || 1450,
+          streak: freshUser.streak || 12,
+          points: freshUser.points || 1450,
           recentSessions: data.length > 0 ? data.slice(0, 5).map((s: any) => ({
             subject: 'Study Session',
             duration: `${Math.floor((s.duration || 0) / 60)}m`,
@@ -72,14 +79,17 @@ const Dashboard = () => {
             { subject: 'React Development', duration: '3h 00m', score: 95, time: 'Yesterday' },
           ]
         });
-      } catch (err) {
-        toast.error("Failed to fetch dashboard data");
+      } catch (err: any) {
+        // Non-401 errors (401 is handled by the global interceptor in api.ts)
+        if (err?.response?.status !== 401) {
+          toast.error('Failed to fetch dashboard data');
+        }
       } finally {
         setLoading(false);
       }
     };
-    fetchStats();
-  }, [user.points, user.streak]);
+    init();
+  }, []);
 
   const totalHours = useCounter(Number(stats?.totalHours) || 0, 2000, 200);
   const avgScore = useCounter(stats?.avgScore || 0, 2000, 400);
@@ -112,7 +122,7 @@ const Dashboard = () => {
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-accent-blue/15 blur-[150px] animate-pulse" style={{ animationDuration: '8s' }} />
         <div className="absolute top-[40%] right-[-10%] w-[40%] h-[60%] rounded-full bg-accent-violet/10 blur-[150px] animate-pulse" style={{ animationDuration: '12s', animationDelay: '2s' }} />
         <div className="absolute bottom-[-20%] left-[20%] w-[50%] h-[50%] rounded-full bg-accent-cyan/10 blur-[150px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '4s' }} />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03]" />
+        <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-[0.03]" />
       </div>
 
       <nav className="sticky top-0 z-50 px-6 md:px-10 py-5 flex items-center justify-between backdrop-blur-2xl bg-[#02040a]/70 border-b border-[rgba(255,255,255,0.05)]">

@@ -115,3 +115,15 @@ export const logout = async (req, res) => {
   });
   res.json({ message: 'Logged out successfully' });
 };
+
+// Session verification — called by frontend on load to check if cookie is still valid
+export const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password -googleId');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ user: { id: user._id, name: user.name, email: user.email, points: user.points, streak: user.streak } });
+  } catch (error) {
+    console.error('Get me error:', error);
+    res.status(500).json({ message: 'An internal error occurred' });
+  }
+};
