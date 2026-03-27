@@ -1,11 +1,39 @@
+import jwt from 'jsonwebtoken';
+import { z } from 'zod';
 import User from '../models/User.js';
 import { OAuth2Client } from 'google-auth-library';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// #4: Zod schemas for input validation
+const registerSchema = z.object({
+  name: z.string().min(1).max(100),
+  email: z.string().email().max(255),
+  password: z.string().min(8).max(128),
+});
+
+const loginSchema = z.object({
+  email: z.string().email().max(255),
+  password: z.string().min(1).max(128),
+});
+
+// #3: Helper to set JWT as httpOnly cookie
+const setTokenCookie = (res, userId) => {
+  const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+  return token;
+};
+
 export const googleLogin = async (req, res) => {
   try {
     const { token } = req.body;
+    if (!token) return res.status(400).json({ message: 'Token is required' });
+
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID
@@ -21,42 +49,69 @@ export const googleLogin = async (req, res) => {
       await user.save();
     }
 
-    const jwtToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token: jwtToken, user: { id: user._id, name: user.name, email: user.email, points: user.points, streak: user.streak } });
+    // #3: Set token in httpOnly cookie instead of response body
+    setTokenCookie(res, user._id);
+    res.json({ user: { id: user._id, name: user.name, email: user.email, points: user.points, streak: user.streak } });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    // #7: Don't leak internal error messages
+    console.error('Google login error:', error);
+    res.status(500).json({ message: 'An internal error occurred' });
   }
 };
-import jwt from 'jsonwebtoken';
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    // #4: Validate input with Zod
+    const { name, email, password } = registerSchema.parse(req.body);
+
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: 'User already exists' });
 
     const user = new User({ name, email, password });
     await user.save();
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email } });
+    // #3: Set token in httpOnly cookie instead of response body
+    setTokenCookie(res, user._id);
+    res.status(201).json({ user: { id: user._id, name: user.name, email: user.email } });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Validation failed', errors: error.errors });
+    }
+    // #7: Don't leak internal error messages
+    console.error('Registration error:', error);
+    res.status(500).json({ message: 'An internal error occurred' });
   }
 };
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    // #4: Validate input with Zod
+    const { email, password } = loginSchema.parse(req.body);
+
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: 'Invalid credentials' });
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email, points: user.points, streak: user.streak } });
+    // #3: Set token in httpOnly cookie instead of response body
+    setTokenCookie(res, user._id);
+    res.json({ user: { id: user._id, name: user.name, email: user.email, points: user.points, streak: user.streak } });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: 'Validation failed', errors: error.errors });
+    }
+    // #7: Don't leak internal error messages
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'An internal error occurred' });
   }
+};
+
+export const logout = async (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
+  res.json({ message: 'Logged out successfully' });
 };

@@ -17,8 +17,9 @@ import { useEffect, useState } from "react";
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const token = localStorage.getItem('token');
-  if (!token) return <Navigate to="/login" replace />;
+  // JWT is now an httpOnly cookie — check for stored user object instead
+  const user = localStorage.getItem('user');
+  if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
 

@@ -14,7 +14,7 @@ const Signup = () => {
     e.preventDefault();
     try {
       const { data } = await api.post('/auth/register', { name, email, password });
-      localStorage.setItem('token', data.token);
+      // Token is set as httpOnly cookie by the server — store only non-sensitive user info
       localStorage.setItem('user', JSON.stringify(data.user));
       toast.success('Registration successful!');
       navigate('/dashboard');

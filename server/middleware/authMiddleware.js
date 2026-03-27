@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
 
+// #3: Read token from httpOnly cookie first, fall back to Authorization header
 const auth = (req, res, next) => {
-  const token = req.header('Authorization')?.replace('Bearer ', '');
+  const token = req.cookies?.token || req.header('Authorization')?.replace('Bearer ', '');
   if (!token) return res.status(401).json({ message: 'No token, authorization denied' });
 
   try {
